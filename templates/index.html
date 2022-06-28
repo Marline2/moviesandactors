@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>영화 배우</title>
+
+  <!--Bulma-->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.8.0/css/bulma.min.css" />
+
+  <!--Jquery-->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+  <!--fontawesome-->
+  <script defer src="https://use.fontawesome.com/releases/v5.3.1/js/all.js"></script>
+
+  <style>
+    @media(max-width: 700px) {
+
+      .none {
+        opacity: 1 !important;
+        color: blue;
+      }
+
+      .lists {
+        width: 500px;
+      }
+
+      #movie-box {
+        width: 500px;
+        margin-left: -420px;
+
+      }
+
+      #star-box {
+        display: none;
+      }
+
+    }
+
+    .none {
+      opacity: 0;
+    }
+
+    .center {
+      text-align: center;
+    }
+
+    .lists {
+      display: flex;
+      flex-direction: row;
+      margin: 20px auto 0 auto;
+      width: 1000px;
+      justify-content: space-around;
+    }
+
+    .star-name {
+      display: inline-block;
+    }
+
+    .star-name:hover {
+      text-decoration: underline;
+    }
+
+    .rank {
+      text-align: center;
+      font-size: 25px;
+      font-weight: bolder;
+    }
+
+    .card {
+      margin-bottom: 15px;
+    }
+  </style>
+  <script>
+
+    //상단에 시간 나타내는 함수
+    function showClock() {
+      var currentDate = new Date();
+      var divClock = document.getElementById('divClock');
+      var msg = "현재 시간 : ";
+      if (currentDate.getHours() > 12) {      //시간이 12보다 크다면 오후 아니면 오전
+        msg += "오후 ";
+        msg += currentDate.getHours() - 12 + "시 ";
+      }
+      else {
+        msg += "오전 ";
+        msg += currentDate.getHours() + "시 ";
+      }
+
+      msg += currentDate.getMinutes() + "분 ";
+      msg += currentDate.getSeconds() + "초";
+
+      divClock.innerText = msg;
+
+      if (currentDate.getMinutes() > 58) {    //정각 1분전부터 빨강색으로 출력
+        divClock.style.color = "red";
+      }
+      setTimeout(showClock, 1000);  //1초마다 갱신
+    }
+
+    $(document).ready(function () {
+      showStar();
+    });
+
+    //각 리스트를 불러오는 함수
+    function showStar() {
+      $.ajax({
+        type: 'GET',
+        url: '/api/list?sample_give=샘플데이터',
+        data: {},
+        success: function (response) {
+          let movies = response['movies']
+          let mystars = response['movie_stars']
+          for (let i = 0; i < mystars.length; i++) {
+            let name = mystars[i]['name']
+            let img_url = mystars[i]['img_url']
+            let recent = mystars[i]['recent']
+            let url = mystars[i]['url']
+            let like = mystars[i]['like']
+            let temp_html = `<div class="card" style="width: 500px; height: 148px; margin-left: 12px;">
+                              <div class="card-content">
+                                <div class="media">
+                                  <div class="media-left">
+                                    <figure class="image is-48x48">
+                                      <img src="${img_url}" alt="Placeholder image"/>
+                                    </figure>
+                                  </div>
+                                <div class="media-content">
+                                  <a href="${url}" target="_blank" class="star-name title is-4">${name} (좋아요: ${like})</a>
+                                  <p class="subtitle is-6">${recent}</p>
+                                </div>
+                              </div>
+                            </div>
+                            <footer class="card-footer">
+                              <a href="#" onclick="likeStar('${name}')" class="card-footer-item has-text-info">좋아요<span class="icon">
+                                <i class="fas fa-thumbs-up"></i>
+                                </span></a>
+                              <a href="#" onclick="deleteStar('${name}')" class="card-footer-item has-text-danger">제외<span class="icon">
+                                <i class="fas fa-ban"></i>
+                              </span></a></footer>
+                            </div>`
+            $('#star-box').append(temp_html)
+          }
+          for (let i = 0; i < movies.length; i++) {
+            let name = movies[i]['name']
+            let type = movies[i]['type']
+            let actor = movies[i]['actor']
+            let url = movies[i]['url']
+            let temp_html = `<div class="card" style="width: 500px; height: 148px; margin-right: 12px;">
+                              <div class="card-content">
+                                <div class="media-content" style="overflow: hidden;">
+                                  <a href="${url}" target="_blank" class="star-name title is-4">${name}</a>
+                                  <p class="subtitle is-6">${type} <br/>주연: ${actor} </p>
+                                </div>
+                              </div>
+                            </div>`
+            $('#movie-box').append(temp_html)
+          }
+        }
+      });
+    }
+
+    //좋아요 버튼을 눌렀을 때,
+    function likeStar(name) {
+      $.ajax({
+        type: 'POST',
+        url: '/api/like',
+        data: { name_give: name },
+        success: function (response) {
+          alert(response['msg']);
+          window.location.reload()
+        }
+      });
+    }
+
+    //없애기 버튼을 눌렀을 때,
+    function deleteStar(name) {
+      $.ajax({
+        type: 'POST',
+        url: '/api/delete',
+        data: { name_give: name },
+        success: function (response) {
+          alert(response['msg']);
+          window.location.reload()
+        }
+      });
+    }
+
+  </script>
+</head>
+
+<body>
+  <section class="hero is-warning">
+    <div class="hero-body">
+      <div class="container center">
+        <h1 class="title">
+          &#127774;영화와 영화 배우&#127775;
+        </h1>
+        <h2 class="subtitle">
+          요즘 뜨고 있는 영화 순위를 살펴보고,<br />
+          인기가 많은 영화 배우들의 선호도를 공유해요!<br />
+        </h2>
+
+        <body onload="showClock()">
+          <div id="divClock" class="clock"></div>
+        </body>
+
+        <h2 class="none">
+          화면을 넓히면 영화 배우들을 볼 수 있어요!
+        </h2>
+
+      </div>
+    </div>
+  </section>
+  <section class=" lists">
+    <div class="movie-list" id="movie-box">
+      <h1 class="rank">&#127774;영화 순위&#129308;</h1>
+    </div>
+    <div class="star-list" id="star-box">
+      <h1 class="rank">&#129307;배우 순위&#127775;</h1>
+    </div>
+  </section>
+</body>
+
+</html>
